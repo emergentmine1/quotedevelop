@@ -1,18 +1,27 @@
-// KWE API client — thin wrapper around fetch that talks to the Spring Boot backend.
-// Falls back gracefully to the localStorage mock while the Java service is not deployed.
+// KWE API client — talks to the Spring Boot backend using its REAL endpoints.
+// Base URL comes from NEXT_PUBLIC_BACKEND_URL (set it to your deployed backend).
+//
+// Endpoints (see backend-java controllers):
+//   GET  /api/v1/profiledata/defaults          quote form starting defaults (cdcodes)
+//   GET  /api/v1/masterdata/codes?cmcode=...    dropdown options per category
+//   GET  /api/v1/masterdata/airports?query=     airport search (origin/destination)
+//   GET  /api/v1/masterdata/countries           active country list
+//   POST /api/v1/quote-requests                 submit a quote request -> { qrid, qrref, status }
 
-const BASE_URL = import.meta.env.VITE_BACKEND_URL || '';
+const BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL || '';
 
 async function request(path, { method = 'GET', body, headers = {} } = {}) {
-  const url = `${BASE_URL}${path}`;
-  const res = await fetch(url, {
+  if (!BASE_URL) {
+    throw new Error('NEXT_PUBLIC_BACKEND_URL is not configured');
+  }
+  const res = await fetch(`${BASE_URL}${path}`, {
     method,
     headers: { 'Content-Type': 'application/json', ...headers },
     body: body ? JSON.stringify(body) : undefined,
   });
   if (!res.ok) {
     const problem = await res.json().catch(() => ({}));
-    const err = new Error(problem?.detail || `Request failed (${res.status})`);
+    const err = new Error(problem?.detail || problem?.title || `Request failed (${res.status})`);
     err.status = res.status;
     err.problem = problem;
     throw err;
@@ -21,103 +30,150 @@ async function request(path, { method = 'GET', body, headers = {} } = {}) {
 }
 
 // ------------------------------------------------------------
-// Endpoint helpers
+// Master data / defaults
 // ------------------------------------------------------------
 
-/** Submit an inquiry to the Java backend (R2, R9). */
-export function submitInquiry(payload) {
-  return request('/api/v1/inquiries', { method: 'POST', body: payload });
+/** GET /api/v1/profiledata/defaults */
+export function getQuoteDefaults() {
+  return request('/api/v1/profiledata/defaults');
 }
 
-/** Fetch config defaults (R3). */
-export function getConfigDefaults() {
-  return request('/api/v1/config/defaults');
+/** GET /api/v1/masterdata/codes?cmcode=CGT,PKT */
+export function getMasterCodes(cmcodes = []) {
+  const qs = cmcodes.length ? `?cmcode=${encodeURIComponent(cmcodes.join(','))}` : '';
+  return request(`/api/v1/masterdata/codes${qs}`);
 }
 
-/** Search ports (R4). */
-export function searchPorts(query, type) {
-  const params = new URLSearchParams();
-  if (query) params.set('query', query);
-  if (type)  params.set('type', type);
-  return request(`/api/v1/ports?${params}`);
+/** GET /api/v1/masterdata/airports?query=&countryCode=&limit= */
+export function searchAirports(query, countryCode, limit) {
+  const p = new URLSearchParams();
+  if (query) p.set('query', query);
+  if (countryCode) p.set('countryCode', countryCode);
+  if (limit) p.set('limit', String(limit));
+  const qs = p.toString();
+  return request(`/api/v1/masterdata/airports${qs ? `?${qs}` : ''}`);
 }
 
-/** Admin: list inquiries. */
-export function adminListInquiries({ status, from, to, page = 0, size = 25 } = {}) {
-  const params = new URLSearchParams({ page, size });
-  if (status) params.set('status', status);
-  if (from)   params.set('from', from);
-  if (to)     params.set('to', to);
-  return request(`/api/v1/admin/inquiries?${params}`, {
-    headers: { Authorization: `Bearer ${localStorage.getItem('kwe_jwt') || ''}` },
-  });
-}
-
-/** Admin: change status (Kanban drag-drop). */
-export function adminChangeStatus(id, status, note) {
-  return request(`/api/v1/admin/inquiries/${id}/status`, {
-    method: 'PATCH',
-    headers: { Authorization: `Bearer ${localStorage.getItem('kwe_jwt') || ''}` },
-    body: { status, note },
-  });
+/** GET /api/v1/masterdata/countries */
+export function listCountries() {
+  return request('/api/v1/masterdata/countries');
 }
 
 // ------------------------------------------------------------
-// Availability probe — used by leads-store.js to decide between
-// live backend calls and the localStorage mock.
+// Quote request submission
 // ------------------------------------------------------------
-let _availability = null;
-export async function isBackendAvailable() {
-  if (_availability !== null) return _availability;
-  try {
-    await Promise.race([
-      request('/api/v1/config/defaults'),
-      new Promise((_, r) => setTimeout(() => r(new Error('timeout')), 1500)),
-    ]);
-    _availability = true;
-  } catch {
-    _availability = false;
-  }
-  return _availability;
+
+/** POST /api/v1/quote-requests -> { qrid, qrref, status } */
+export function submitQuoteRequest(payload) {
+  return request('/api/v1/quote-requests', { method: 'POST', body: payload });
 }
 
-/** Map a frontend InstantQuote payload into the Java {@code InquiryRequest} DTO shape. */
-export function mapPayloadToInquiryRequest(payload, contact) {
-  const exporterEnabled = Boolean(payload?.exporterLocationEnabled);
-  return {
-    serviceType: 'AIR',
-    originPortCode:      payload.origin.code,
-    destinationPortCode: payload.destination.code,
-    cargoMode:           (payload.cargoMode || 'lcl').toUpperCase(),
-    shippingMode:        (payload.shippingMode || 'air').toUpperCase(),
-    hazardous:           Boolean(payload.services?.hazardous),
-    commodity:           payload.commodity,
-    weightKg:            ((payload.shipmentTotals?.lb || 0) / 2.20462).toFixed(2),
-    volumeCbm:           ((payload.shipmentTotals?.cft || 0) / 35.3147).toFixed(3),
-    readyDate:           payload.readyDate,
-    requiredDeliveryDate: payload.requiredDeliveryDate,
-    containers:          (payload.containers || []).map((c) => ({ type: c.type, count: c.count })),
-    customerEmailConsent: Boolean(payload.customerEmailConsent),
-    commercialCustomer:   Boolean(payload.commercialCustomer),
-    contactPerson: {
-      fullName:    contact.fullName,
-      email:       contact.email,
-      phone:       contact.phone || '',
-      jobTitle:    contact.jobTitle || '',
-      companyName: contact.company,
-    },
-    ...(exporterEnabled ? {
-      exporter: {
-        exporterName: contact.exporterName || contact.company,
-        addressLine1: contact.addressLine1 || '',
-        addressLine2: contact.addressLine2 || '',
-        city:         contact.city || '',
-        state:        contact.state || '',
-        postalCode:   contact.postalCode || '',
-        countryCode:  contact.countryCode || 'US',
+// ------------------------------------------------------------
+// Payload mapping: InstantQuote form state -> QuoteRequestPayload DTO
+// ------------------------------------------------------------
+// Code fields use md_codedetail cdcodes (e.g. TPMA, not "AIR"). The values
+// below mirror ProfileDataController defaults. The ones marked TODO must be
+// confirmed against GET /api/v1/masterdata/codes once the live DB is reachable
+// (packageType -> PKT cdcode, accessorialServices -> ACS cdcodes).
+
+const KG_PER_LB = 0.453592;
+const CFT_PER_CBM = 35.3147;
+
+function isoDateTime(isoDate) {
+  return isoDate ? `${isoDate}T00:00:00` : null;
+}
+
+/**
+ * @param iq   the InstantQuote payload (buildPayload output)
+ * @param contact trimmed contact object
+ * @param ctx  { weightUnit, dimUnit, calcMode, units, totalShipment, isContainerCargo }
+ */
+export function mapToQuoteRequestPayload(iq, contact, ctx = {}) {
+  const weightUomCode = ctx.weightUnit === 'LB' ? 'WUMLB' : 'WUMKG';
+  const dimUomCode = ctx.dimUnit === 'IN' ? 'DUMIN' : 'DUMCM';
+
+  const weightKg = (iq.shipmentTotals?.lb || 0) * KG_PER_LB;
+  const cbm = (iq.shipmentTotals?.cft || 0) / CFT_PER_CBM;
+  const chargeableKg = Math.max(weightKg, cbm * 167); // air volumetric factor
+
+  const pickupType = iq.originType === 'door' ? 'PDTDO' : 'PDTPO';
+  const deliveryType = iq.destinationType === 'door' ? 'PDTDO' : 'PDTPO';
+
+  // Line items — public app is Air + Packages/Pallets only.
+  let lineItems;
+  if (ctx.calcMode === 'total') {
+    lineItems = [
+      {
+        commodity: (iq.commodity || 'General cargo').slice(0, 256),
+        quantity: 1,
+        packageType: 'Boxes/Crates', // TODO: PKT cdcode
+        grossWeight: Number((ctx.totalShipment?.weight ?? 0)) || 0,
+        grossWeightUom: weightUomCode,
+        volume: Number((ctx.totalShipment?.volume ?? 0)) || 0,
+        volumeUom: ctx.dimUnit === 'CM' ? 'VUMCBM' : 'VUMCFT',
+        dimensionUom: dimUomCode,
+        isHazmat: Boolean(iq.services?.hazardous),
+        isStackable: Boolean(iq.services?.stackable ?? true),
       },
-    } : {}),
-    utmSource:   payload.utmSource || null,
-    utmCampaign: payload.utmCampaign || null,
+    ];
+  } else {
+    lineItems = (ctx.units || []).map((u) => ({
+      commodity: ((u.commodity || iq.commodity) || 'General cargo').slice(0, 256),
+      quantity: Number(u.units) || 1,
+      packageType: (u.packageType || 'Boxes/Crates').slice(0, 20), // TODO: PKT cdcode
+      grossWeight: Number(u.weight) || 0,
+      grossWeightUom: weightUomCode,
+      length: Number(u.length) || 0,
+      width: Number(u.width) || 0,
+      height: Number(u.height) || 0,
+      dimensionUom: dimUomCode,
+      isHazmat: Boolean(u.hazardous),
+      isStackable: true,
+    }));
+  }
+  if (!lineItems.length) {
+    lineItems = [
+      { commodity: (iq.commodity || 'General cargo').slice(0, 256), quantity: 1, packageType: 'Boxes/Crates', isHazmat: false, isStackable: true },
+    ];
+  }
+
+  const address =
+    contact.addressDisplay ||
+    [contact.addressLine1, contact.city, contact.state, contact.postalCode].filter(Boolean).join(', ') ||
+    undefined;
+
+  return {
+    mode: 'TPMA', // Air
+    cargoType: 'CGTPNP', // Packages & Pallets
+    ratingType: 'RTTPU', // Per unit
+    pickupType,
+    originPortCode: iq.origin?.code,
+    pickupCity: iq.originType === 'door' ? iq.origin?.city : undefined,
+    pickupCountryCode: iq.origin?.countryCode,
+    deliveryType,
+    destinationPortCode: iq.destination?.code,
+    deliveryCity: iq.destinationType === 'door' ? iq.destination?.city : undefined,
+    deliveryCountryCode: iq.destination?.countryCode,
+    weightUom: weightUomCode,
+    dimensionUom: dimUomCode,
+    totalGrossWeight: Number(weightKg.toFixed(4)),
+    totalGrossWeightUom: 'WUMKG',
+    totalVolume: Number(cbm.toFixed(4)),
+    totalVolumeUom: 'VUMCBM',
+    totalChargeableWeight: Number(chargeableKg.toFixed(4)),
+    totalChargeableWeightUom: 'WUMKG',
+    cargoReadyDate: isoDateTime(iq.readyDate),
+    requiredDeliveryDate: isoDateTime(iq.requiredDeliveryDate),
+    fullName: contact.fullName,
+    companyName: contact.company,
+    isCommercialCustomer: Boolean(iq.commercialCustomer),
+    email: contact.email,
+    isConsentEmail: Boolean(iq.customerEmailConsent),
+    phone: contact.phone || undefined,
+    jobTitle: contact.jobTitle || undefined,
+    address,
+    countryCode: contact.countryCode || undefined,
+    lineItems,
+    accessorialServices: [], // TODO: map iq.services -> ACS cdcodes via /masterdata/codes?cmcode=ACS
   };
 }
