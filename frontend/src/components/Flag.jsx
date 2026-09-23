@@ -1,6 +1,6 @@
 import { cn } from '@/lib/utils';
 
-// Country flag via flagcdn (free, no key required) with graceful fallback
+// Country flag served from local files (public/flags/{cc}.png), no CDN.
 export default function Flag({ code, size = 20, className }) {
   if (!code) return null;
   const cc = code.toLowerCase();
@@ -8,8 +8,7 @@ export default function Flag({ code, size = 20, className }) {
   const h = Math.round(size * 0.75);
   return (
     <img
-      src={`https://flagcdn.com/w40/${cc}.png`}
-      srcSet={`https://flagcdn.com/w40/${cc}.png 1x, https://flagcdn.com/w80/${cc}.png 2x`}
+      src={`/flags/${cc}.png`}
       width={w}
       height={h}
       alt={code}
