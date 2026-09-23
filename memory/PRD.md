@@ -34,6 +34,8 @@ Existing "KWE Instant Quote" app: Java Spring Boot backend (jOOQ + PostgreSQL/Au
 - ✅ api-client rewritten to real backend contract + `QuoteRequestPayload` mapper.
 - ✅ Quote submit posts best-effort to `POST /api/v1/quote-requests`, then routes to results.
 - ✅ E2E tested (testing agent iteration_1): 4-step flow → results → edit-search. Frontend 100%.
+- ✅ (2026-06) Country flags served from **local files** (`public/flags/*.png`, 254 flags) instead of flagcdn — updated `Flag.jsx` in both `frontend/` and `kwe-admin/`.
+- ✅ (2026-06) **Accurate quote-submit mapping**: `mapToQuoteRequestPayload` now resolves real cdcodes from the backend (`loadQuoteCodes()` → `/profiledata/defaults` + `/masterdata/codes?cmcode=PKT,ACS,PDT`): packageType→PKT cdcode, services→ACS cdcodes, door/port→PDT, mode/cargo/rating/uom from defaults. Units normalized to canonical KG/CM/CBM. Safe fallbacks when backend offline. Verified against schema `tx_quoterequest` / `tx_quoterequestdetails` (quote_dev.json).
 
 ## Notes / MOCKED
 - **Results pricing is DUMMY** (client-side `pricing-engine.js`), per user request until a real rates API is decided.

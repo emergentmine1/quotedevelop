@@ -36,7 +36,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { cn } from '@/lib/utils';
 import { ports, airports } from '@/lib/mock-data';
 import Flag from '@/components/Flag';
-import { submitQuoteRequest, mapToQuoteRequestPayload } from '@/lib/api-client';
+import { submitQuoteRequest, mapToQuoteRequestPayload, loadQuoteCodes } from '@/lib/api-client';
 import { toast } from 'sonner';
 import QuoteSummary from '@/components/QuoteSummary';
 import UnitForm from '@/components/UnitForm';
@@ -474,6 +474,8 @@ export default function InstantQuote() {
     // Best-effort submit to the KWE backend (POST /api/v1/quote-requests).
     // Non-blocking: results render regardless of backend availability.
     try {
+      // Resolve real cdcodes (defaults + PKT/ACS/PDT) for an accurate payload; null when offline.
+      const resolved = await loadQuoteCodes().catch(() => null);
       const dto = mapToQuoteRequestPayload(payload, trimmed, {
         weightUnit,
         dimUnit,
@@ -481,7 +483,7 @@ export default function InstantQuote() {
         units,
         totalShipment,
         isContainerCargo,
-      });
+      }, resolved);
       const created = await submitQuoteRequest(dto);
       if (created?.qrref) sessionStorage.setItem('iq_qrref', created.qrref);
     } catch (e) {
