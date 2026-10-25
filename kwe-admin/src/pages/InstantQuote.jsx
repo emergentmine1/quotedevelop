@@ -34,6 +34,7 @@ import { cn } from '@/lib/utils';
 import { ports, airports } from '@/lib/mock-data';
 import Flag from '@/components/Flag';
 import { createLead } from '@/lib/leads-store';
+import { submitQuoteRequest, mapToQuoteRequestPayload, loadQuoteCodes } from '@/lib/api-client';
 import { toast } from 'sonner';
 import QuoteSummary from '@/components/QuoteSummary';
 import UnitForm from '@/components/UnitForm';
@@ -397,7 +398,7 @@ export default function InstantQuote() {
     };
   };
 
-  const getQuote = () => {
+  const getQuote = async () => {
     if (!step1Valid || !step2Valid) {
       toast.error('Please complete all steps');
       return;
@@ -508,6 +509,24 @@ export default function InstantQuote() {
     });
 
     sessionStorage.setItem('iq_payload', JSON.stringify(payload));
+
+    // Best-effort submit to POST /api/v1/quote-requests with the real cdcodes; results show regardless.
+    try {
+      const resolved = await loadQuoteCodes().catch(() => null);
+      const dto = mapToQuoteRequestPayload(payload, trimmed, {
+        weightUnit,
+        dimUnit,
+        calcMode,
+        units,
+        totalShipment,
+        isContainerCargo,
+      }, resolved);
+      const created = await submitQuoteRequest(dto);
+      if (created?.qrref) sessionStorage.setItem('iq_qrref', created.qrref);
+    } catch (e) {
+      console.warn('[quote-requests] submit failed (backend unreachable?)', e);
+    }
+
     const firstName = trimmed.fullName.split(' ')[0];
     if (!payload.services?.hazardous) {
       toast.success(`Thanks ${firstName} — showing your live rates now.`);

@@ -87,3 +87,14 @@ It reads the backend URL from `VITE_BACKEND_URL` (create a `.env` with `VITE_BAC
 - `frontend/` and `kwe-admin/` both use port 3000 by default — don't run both on the same port.
 - `NEXT_PUBLIC_*` env vars are inlined at build time; restart `yarn dev` after changing `.env`.
 - The `docker-compose.yml` at the repo root predates this migration — its `frontend` service/Dockerfile/nginx.conf still target the OLD Vite build and would need updating before using Docker for the Next.js app. Running the three parts directly (as above) is the supported path today.
+
+## Admin Quotes page (`/admin/quotes` in kwe-admin)
+New backend endpoints (Java, no auth yet, same as the rest of the API):
+- `GET  /api/v1/quote-requests?query=&countryCode=&status=&from=YYYY-MM-DD&to=YYYY-MM-DD&limit=&offset=` -> `{ items, total, limit, offset }`
+- `PATCH /api/v1/quote-requests/{qrid}/status` body `{ "status": "RQSREV" }` -> updated row
+
+Statuses come from code category **RQS** in `md_codedetail`. The admin app matches them by description
+(New / Review / Sent / Won / Lost). If a description can't be matched it uses RQSNEW, RQSREV, RQSSNT, RQSWON, RQSLST,
+so make sure those (or matching descriptions) exist and are active, otherwise the PATCH returns 400.
+
+If `VITE_BACKEND_URL` is not set or the backend is down, the page shows labelled sample data stored in the browser.

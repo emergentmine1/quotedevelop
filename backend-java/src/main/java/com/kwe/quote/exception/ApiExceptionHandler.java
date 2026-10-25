@@ -36,6 +36,14 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
         return problem;
     }
 
+    @ExceptionHandler(NotFoundException.class)
+    public ProblemDetail handleNotFound(NotFoundException exception) {
+        ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.NOT_FOUND);
+        problem.setTitle("Not Found");
+        problem.setDetail(exception.getMessage());
+        return problem;
+    }
+
     /** Gives bean validation failures the same shape as the handler above. */
     @Override
     protected ResponseEntity<Object> handleMethodArgumentNotValid(

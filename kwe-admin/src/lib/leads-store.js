@@ -1,10 +1,7 @@
 // KWE Leads Store
 // Persists leads captured from the public Instant Quote flow.
-// Primary write path: POST /api/v1/inquiries (Java backend, Spring Boot).
-// Fallback: localStorage (for local/mock demo mode).
+// Stored in localStorage; quotes themselves go to POST /api/v1/quote-requests.
 // Admins consume this data via the Leads page in the admin panel.
-
-import { submitInquiry, isBackendAvailable, mapPayloadToInquiryRequest } from '@/lib/api-client';
 
 const STORAGE_KEY = 'kwe_leads_v2';
 
@@ -147,38 +144,6 @@ export function createLead(partial) {
   const next = [lead, ...list];
   writeAll(next);
   return lead;
-}
-
-/**
- * Preferred write path — attempts the Java backend first, mirrors the response
- * into localStorage for admin views, and returns { lead, backendResponse }.
- * If the backend is unreachable, silently falls back to the localStorage-only lead.
- */
-export async function submitLeadAndInquiry(partial) {
-  const lead = createLead(partial);
-  try {
-    const available = await isBackendAvailable();
-    if (!available) return { lead, backendResponse: null, mode: 'localStorage' };
-    const payload = mapPayloadToInquiryRequest(partial.quotePayload || {}, {
-      fullName: partial.name,
-      email: partial.email,
-      phone: partial.phone,
-      jobTitle: partial.jobTitle,
-      company: partial.company,
-      ...(partial.exporter || {}),
-    });
-    const response = await submitInquiry(payload);
-    updateLead(lead.id, {
-      backendReference: response?.reference,
-      backendStatus: response?.status,
-      backendQuote: response?.quote || null,
-    });
-    return { lead, backendResponse: response, mode: 'backend' };
-  } catch (e) {
-    // Backend unreachable / request failed — keep the localStorage lead.
-    console.warn('[leads-store] backend unavailable, using localStorage fallback', e);
-    return { lead, backendResponse: null, mode: 'localStorage' };
-  }
 }
 
 export function updateLead(id, patch) {

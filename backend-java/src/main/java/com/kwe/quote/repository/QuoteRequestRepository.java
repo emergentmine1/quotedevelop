@@ -1,14 +1,19 @@
 package com.kwe.quote.repository;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
+import org.jooq.Condition;
 import org.jooq.DSLContext;
+import org.jooq.impl.DSL;
 import org.springframework.stereotype.Repository;
 
 import com.kwe.quote.dto.QuoteRequestLineItem;
 import com.kwe.quote.dto.QuoteRequestPayload;
+import com.kwe.quote.dto.QuoteRequestSummary;
 import com.kwe.quote.jooq.tables.records.TxQuoteaccessorialservicesRecord;
 import com.kwe.quote.jooq.tables.records.TxQuoterequestRecord;
 import com.kwe.quote.jooq.tables.records.TxQuoterequestdetailsRecord;
@@ -186,6 +191,76 @@ public class QuoteRequestRepository {
         }
 
         dsl.batchInsert(records).execute();
+    }
+
+    /** Every argument is optional; null means no filter on that field. Dates match cdate. */
+    public Condition filter(String query, String countryCode, String status, LocalDate from,
+            LocalDate to) {
+        Condition condition = DSL.noCondition();
+        if (query != null) {
+            String like = "%" + query + "%";
+            condition = condition.and(TX_QUOTEREQUEST.QRREF.likeIgnoreCase(like)
+                    .or(TX_QUOTEREQUEST.FULLNAME.likeIgnoreCase(like))
+                    .or(TX_QUOTEREQUEST.COMPANYNAME.likeIgnoreCase(like))
+                    .or(TX_QUOTEREQUEST.EMAIL.likeIgnoreCase(like))
+                    .or(TX_QUOTEREQUEST.POLOADING.likeIgnoreCase(like))
+                    .or(TX_QUOTEREQUEST.POUNLOADING.likeIgnoreCase(like)));
+        }
+        if (countryCode != null) {
+            condition = condition.and(TX_QUOTEREQUEST.PKUPCOUNTRYCODE.eq(countryCode)
+                    .or(TX_QUOTEREQUEST.DELICOUNTRYCODE.eq(countryCode)));
+        }
+        if (status != null) {
+            condition = condition.and(TX_QUOTEREQUEST.STATUS.eq(status));
+        }
+        if (from != null) {
+            condition = condition.and(TX_QUOTEREQUEST.CDATE.ge(from.atStartOfDay()));
+        }
+        if (to != null) {
+            condition = condition.and(TX_QUOTEREQUEST.CDATE.lt(to.plusDays(1).atStartOfDay()));
+        }
+        return condition;
+    }
+
+    /** Admin list: newest first, filtered by free text, country, status and created date. */
+    public List<QuoteRequestSummary> search(Condition filter, int limit, int offset) {
+        return dsl.select(TX_QUOTEREQUEST.QRID, TX_QUOTEREQUEST.QRREF, TX_QUOTEREQUEST.STATUS,
+                        TX_QUOTEREQUEST.MODE, TX_QUOTEREQUEST.FULLNAME, TX_QUOTEREQUEST.COMPANYNAME,
+                        TX_QUOTEREQUEST.EMAIL, TX_QUOTEREQUEST.PHONE, TX_QUOTEREQUEST.POLOADING,
+                        TX_QUOTEREQUEST.PKUPCOUNTRYCODE, TX_QUOTEREQUEST.POUNLOADING,
+                        TX_QUOTEREQUEST.DELICOUNTRYCODE, TX_QUOTEREQUEST.TOTALGROSSWEIGHT,
+                        TX_QUOTEREQUEST.TOTALVOLUME, TX_QUOTEREQUEST.TOTALCHARGEABLEWEIGHT,
+                        TX_QUOTEREQUEST.CARGOREADYDATE, TX_QUOTEREQUEST.CDATE, TX_QUOTEREQUEST.MDATE)
+                .from(TX_QUOTEREQUEST)
+                .where(filter)
+                .orderBy(TX_QUOTEREQUEST.CDATE.desc(), TX_QUOTEREQUEST.QRID.desc())
+                .limit(limit)
+                .offset(offset)
+                .fetch(r -> new QuoteRequestSummary(r.value1(), r.value2(), r.value3(), r.value4(),
+                        r.value5(), r.value6(), r.value7(), r.value8(), r.value9(), r.value10(),
+                        r.value11(), r.value12(), r.value13(), r.value14(), r.value15(), r.value16(),
+                        r.value17(), r.value18()));
+    }
+
+    public int count(Condition filter) {
+        return dsl.fetchCount(TX_QUOTEREQUEST, filter);
+    }
+
+    /** Returns the number of rows changed: 0 means no such qrid. */
+    public int updateStatus(long qrid, String status, LocalDateTime now) {
+        return dsl.update(TX_QUOTEREQUEST)
+                .set(TX_QUOTEREQUEST.STATUS, status)
+                .set(TX_QUOTEREQUEST.VERSION, TX_QUOTEREQUEST.VERSION.plus(1))
+                .set(TX_QUOTEREQUEST.MBY, CREATED_BY)
+                .set(TX_QUOTEREQUEST.MDATE, now)
+                .set(TX_QUOTEREQUEST.MTZ, TZ_SHORT)
+                .set(TX_QUOTEREQUEST.MTZSTD, TZ_IANA)
+                .where(TX_QUOTEREQUEST.QRID.eq(qrid))
+                .execute();
+    }
+
+    public Optional<QuoteRequestSummary> findSummary(long qrid) {
+        return search(TX_QUOTEREQUEST.QRID.eq(qrid), 1, 0).stream().findFirst();
     }
 
     private boolean orDefault(Boolean value, boolean fallback) {

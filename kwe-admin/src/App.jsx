@@ -29,6 +29,7 @@ import Analytics from '@/pages/provider/Analytics';
 
 import ProviderManagement from '@/pages/admin/ProviderManagement';
 import Leads from '@/pages/admin/Leads';
+import Quotes from '@/pages/admin/Quotes';
 
 import PricingLayout from '@/components/layouts/PricingLayout';
 import PricingOverview from '@/pages/admin/pricing/PricingOverview';
@@ -87,6 +88,7 @@ function App() {
               <Route path="/admin/pricing/matrix/:id" element={<ProtectedRoute allowedRoles={['admin']}><MatrixDetail /></ProtectedRoute>} />
               <Route path="/admin/providers" element={<ProtectedRoute allowedRoles={['admin']}><ProviderManagement /></ProtectedRoute>} />
               <Route path="/admin/leads" element={<ProtectedRoute allowedRoles={['admin']}><Leads /></ProtectedRoute>} />
+              <Route path="/admin/quotes" element={<ProtectedRoute allowedRoles={['admin']}><Quotes /></ProtectedRoute>} />
             </Route>
 
             <Route path="/" element={<Navigate to="/instant-quote" replace />} />

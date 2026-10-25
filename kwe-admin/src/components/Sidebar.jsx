@@ -44,6 +44,7 @@ const PROVIDER_NAV = [
 const ADMIN_NAV = [
   { to: '/admin/pricing', label: 'Pricing Matrices', icon: DollarSign },
   { to: '/admin/leads', label: 'Quote Request', icon: Users },
+  { to: '/admin/quotes', label: 'Quotes', icon: FileText },
 ];
 
 function getNav(role) {
