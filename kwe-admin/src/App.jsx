@@ -7,6 +7,7 @@ import { Toaster } from '@/components/ui/sonner';
 
 import Login from '@/pages/Login';
 import LoginCallback from '@/pages/LoginCallback';
+import SsoSignIn from '@/pages/SsoSignIn';
 import AccessDenied from '@/pages/AccessDenied';
 import HomeRedirect from '@/components/HomeRedirect';
 import { ANY_ROLE, WRITE_ROLE } from '@/lib/admin-nav';
@@ -50,6 +51,7 @@ function App() {
             {/* Public */}
             <Route path="/login" element={<Login />} />
             <Route path="/login/callback" element={<LoginCallback />} />
+            <Route path="/login/sso" element={<SsoSignIn />} />
             <Route path="/access-denied" element={<AccessDenied />} />
             <Route path="/instant-quote" element={<InstantQuote />} />
             <Route path="/instant-quote/results" element={<InstantQuoteResults />} />
