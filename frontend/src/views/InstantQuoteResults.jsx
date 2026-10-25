@@ -23,6 +23,7 @@ import {
   MapPin,
   ChevronDown,
   Download,
+  Ship,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';

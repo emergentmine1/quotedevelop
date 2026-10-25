@@ -49,3 +49,9 @@ Existing "KWE Instant Quote" app: Java Spring Boot backend (jOOQ + PostgreSQL/Au
 - P2: Live `/masterdata/airports` async search + `/masterdata/countries` for dropdowns.
 - P2: Confirm PKT/ACS cdcode mappings in the submit payload.
 - P3: Optional refactor — split large `InstantQuote.jsx` into `components/instant-quote/*`.
+
+## Run state (Oct 2026)
+- Only `kwe-admin` runs in the pod via /etc/supervisor/conf.d/kwe-admin.conf (port 3000 = preview URL). Next.js `frontend` and `backend` are stopped via supervisorctl.
+- kwe-admin vite.config.js: publicDir set to 'public' (flags/logo now served), allowedHosts: true.
+- Removed /app/frontend/package-lock.json (yarn only).
+- To switch back: `sudo supervisorctl stop kwe-admin && sudo supervisorctl start frontend`.
