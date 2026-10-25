@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.regex.Pattern;
 
 import org.jooq.Condition;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -40,6 +41,7 @@ public class QuoteRequestAdminService {
         this.clock = clock;
     }
 
+    @PreAuthorize("hasAnyRole('READ_ONLY','READ_WRITE')")
     @Transactional(readOnly = true)
     public QuoteRequestPage search(String query, String countryCode, String status, LocalDate from,
             LocalDate to, Integer limit, Integer offset) {
@@ -74,6 +76,7 @@ public class QuoteRequestAdminService {
         return new QuoteRequestPage(items, repository.count(filter), pageLimit, pageOffset);
     }
 
+    @PreAuthorize("hasRole('READ_WRITE')")
     @Transactional
     public QuoteRequestSummary updateStatus(long qrid, String status) {
         String code = status.trim().toUpperCase(Locale.ROOT);

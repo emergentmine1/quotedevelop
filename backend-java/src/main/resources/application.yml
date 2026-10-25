@@ -32,6 +32,19 @@ management:
     health:
       show-details: never
 
+kwe:
+  auth:
+    # okta = validate Okta access tokens (production). static = dummy logins, local/dev only.
+    mode: ${KWE_AUTH_MODE:okta}
+    email-claims: ${KWE_AUTH_EMAIL_CLAIMS:email,sub}
+    okta:
+      issuer: ${OKTA_ISSUER:}
+      audience: ${OKTA_AUDIENCE:api://default}
+    static-login:
+      jwt-secret: ${STATIC_JWT_SECRET:}
+      password: ${STATIC_LOGIN_PASSWORD:}
+      ttl-minutes: ${STATIC_JWT_TTL_MINUTES:60}
+
 springdoc:
   swagger-ui:
     path: /swagger-ui.html

@@ -11,16 +11,23 @@
 //   PATCH /api/v1/quote-requests/{qrid}/status  admin status change (RQS cdcode)
 
 const BASE_URL = import.meta.env.VITE_BACKEND_URL || '';
+import { getAccessToken } from '@/lib/auth';
 
-async function request(path, { method = 'GET', body, headers = {} } = {}) {
+async function request(path, { method = 'GET', body, headers = {}, auth = false } = {}) {
   if (!BASE_URL) {
     throw new Error('VITE_BACKEND_URL is not configured');
   }
+  const authHeaders = {};
+  if (auth) {
+    const token = await getAccessToken();
+    if (token) authHeaders.Authorization = `Bearer ${token}`;
+  }
   const res = await fetch(`${BASE_URL}${path}`, {
     method,
-    headers: { 'Content-Type': 'application/json', ...headers },
+    headers: { 'Content-Type': 'application/json', ...authHeaders, ...headers },
     body: body ? JSON.stringify(body) : undefined,
   });
+  if (auth && res.status === 401) window.dispatchEvent(new Event('kwe:unauthorized'));
   if (!res.ok) {
     const problem = await res.json().catch(() => ({}));
     const err = new Error(problem?.detail || problem?.title || `Request failed (${res.status})`);
@@ -73,12 +80,19 @@ export function listQuoteRequests(params = {}) {
     if (v !== undefined && v !== null && v !== '') p.set(k, String(v));
   });
   const qs = p.toString();
-  return request(`/api/v1/quote-requests${qs ? `?${qs}` : ''}`);
+  return request(`/api/v1/quote-requests${qs ? `?${qs}` : ''}`, { auth: true });
 }
 
-/** PATCH /api/v1/quote-requests/{qrid}/status { status: RQS cdcode } */
+/** PATCH /api/v1/quote-requests/{qrid}/status { status: RQS cdcode } — READ_WRITE only */
 export function updateQuoteRequestStatus(qrid, status) {
-  return request(`/api/v1/quote-requests/${qrid}/status`, { method: 'PATCH', body: { status } });
+  return request(`/api/v1/quote-requests/${qrid}/status`, { method: 'PATCH', body: { status }, auth: true });
+}
+
+/** Pricing matrices — READ_WRITE only. POST creates, PUT updates with optimistic `version`. */
+export function savePricingMatrix({ matrixId, ...body }) {
+  return matrixId
+    ? request(`/api/v1/pricing-matrices/${matrixId}`, { method: 'PUT', body, auth: true })
+    : request('/api/v1/pricing-matrices', { method: 'POST', body, auth: true });
 }
 
 /** Quick probe so admin pages can fall back to sample data when no backend is running. */

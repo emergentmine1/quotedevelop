@@ -1,35 +1,11 @@
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Search, Package, FileText, Bell } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
-
-const NAV_BY_ROLE = {
-  customer: [
-    { to: '/dashboard', label: 'Home', icon: LayoutDashboard },
-    { to: '/quotes/search', label: 'Quotes', icon: Search },
-    { to: '/shipments', label: 'Ships', icon: Package },
-    { to: '/invoices', label: 'Invoices', icon: FileText },
-    { to: '/notifications', label: 'Alerts', icon: Bell },
-  ],
-  provider: [
-    { to: '/provider/dashboard', label: 'Home', icon: LayoutDashboard },
-    { to: '/provider/rates', label: 'Rates', icon: FileText },
-    { to: '/provider/booking-requests', label: 'Requests', icon: Package },
-    { to: '/provider/analytics', label: 'Stats', icon: Search },
-    { to: '/notifications', label: 'Alerts', icon: Bell },
-  ],
-  admin: [
-    { to: '/admin/dashboard', label: 'Home', icon: LayoutDashboard },
-    { to: '/admin/users', label: 'Users', icon: FileText },
-    { to: '/admin/providers', label: 'Providers', icon: Package },
-    { to: '/admin/audit-logs', label: 'Logs', icon: Search },
-    { to: '/admin/settings', label: 'Settings', icon: Bell },
-  ],
-};
+import { navFor } from '@/lib/admin-nav';
 
 export default function MobileNav() {
   const { user } = useAuth();
-  const items = NAV_BY_ROLE[user?.role] || NAV_BY_ROLE.customer;
+  const items = navFor(user?.role);
 
   return (
     <nav
@@ -40,7 +16,7 @@ export default function MobileNav() {
         <NavLink
           key={item.to}
           to={item.to}
-          data-testid={`mobile-nav-${item.label.toLowerCase()}`}
+          data-testid={`mobile-nav-${item.short.toLowerCase()}`}
           className={({ isActive }) =>
             cn(
               'flex-1 flex flex-col items-center justify-center gap-0.5 transition-colors',
@@ -51,7 +27,7 @@ export default function MobileNav() {
           {({ isActive }) => (
             <>
               <item.icon className={cn('h-5 w-5', isActive && 'text-[#D4AF37]')} />
-              <span className="text-[10px] font-semibold tracking-wide">{item.label}</span>
+              <span className="text-[10px] font-semibold tracking-wide">{item.short}</span>
               {isActive && <span className="h-0.5 w-6 gold-bg rounded-full" />}
             </>
           )}

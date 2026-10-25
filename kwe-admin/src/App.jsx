@@ -6,8 +6,10 @@ import AppLayout from '@/components/layouts/AppLayout';
 import { Toaster } from '@/components/ui/sonner';
 
 import Login from '@/pages/Login';
-import ForgotPassword from '@/pages/ForgotPassword';
-import ResetPassword from '@/pages/ResetPassword';
+import LoginCallback from '@/pages/LoginCallback';
+import AccessDenied from '@/pages/AccessDenied';
+import HomeRedirect from '@/components/HomeRedirect';
+import { ANY_ROLE, WRITE_ROLE } from '@/lib/admin-nav';
 import InstantQuote from '@/pages/InstantQuote';
 import InstantQuoteResults from '@/pages/InstantQuoteResults';
 
@@ -47,8 +49,8 @@ function App() {
           <Routes>
             {/* Public */}
             <Route path="/login" element={<Login />} />
-            <Route path="/forgot-password" element={<ForgotPassword />} />
-            <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/login/callback" element={<LoginCallback />} />
+            <Route path="/access-denied" element={<AccessDenied />} />
             <Route path="/instant-quote" element={<InstantQuote />} />
             <Route path="/instant-quote/results" element={<InstantQuoteResults />} />
 
@@ -60,39 +62,39 @@ function App() {
                 </ProtectedRoute>
               }
             >
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/quotes/search" element={<QuoteSearch />} />
-              <Route path="/quotes/results" element={<QuoteResults />} />
-              <Route path="/quotes/compare" element={<QuoteComparison />} />
-              <Route path="/bookings/new" element={<Booking />} />
-              <Route path="/shipments" element={<Shipments />} />
-              <Route path="/shipments/:id" element={<ShipmentDetail />} />
-              <Route path="/invoices" element={<Invoices />} />
-              <Route path="/notifications" element={<Notifications />} />
+              <Route path="/dashboard" element={<ProtectedRoute allowedRoles={WRITE_ROLE}><Dashboard /></ProtectedRoute>} />
+              <Route path="/quotes/search" element={<ProtectedRoute allowedRoles={WRITE_ROLE}><QuoteSearch /></ProtectedRoute>} />
+              <Route path="/quotes/results" element={<ProtectedRoute allowedRoles={WRITE_ROLE}><QuoteResults /></ProtectedRoute>} />
+              <Route path="/quotes/compare" element={<ProtectedRoute allowedRoles={WRITE_ROLE}><QuoteComparison /></ProtectedRoute>} />
+              <Route path="/bookings/new" element={<ProtectedRoute allowedRoles={WRITE_ROLE}><Booking /></ProtectedRoute>} />
+              <Route path="/shipments" element={<ProtectedRoute allowedRoles={WRITE_ROLE}><Shipments /></ProtectedRoute>} />
+              <Route path="/shipments/:id" element={<ProtectedRoute allowedRoles={WRITE_ROLE}><ShipmentDetail /></ProtectedRoute>} />
+              <Route path="/invoices" element={<ProtectedRoute allowedRoles={WRITE_ROLE}><Invoices /></ProtectedRoute>} />
+              <Route path="/notifications" element={<ProtectedRoute allowedRoles={WRITE_ROLE}><Notifications /></ProtectedRoute>} />
 
-              <Route path="/provider/dashboard" element={<ProtectedRoute allowedRoles={['provider', 'admin']}><ProviderDashboard /></ProtectedRoute>} />
-              <Route path="/provider/rates" element={<ProtectedRoute allowedRoles={['provider', 'admin']}><RateManagement /></ProtectedRoute>} />
-              <Route path="/provider/routes" element={<ProtectedRoute allowedRoles={['provider', 'admin']}><RouteManagement /></ProtectedRoute>} />
-              <Route path="/provider/booking-requests" element={<ProtectedRoute allowedRoles={['provider', 'admin']}><BookingRequests /></ProtectedRoute>} />
-              <Route path="/provider/analytics" element={<ProtectedRoute allowedRoles={['provider', 'admin']}><Analytics /></ProtectedRoute>} />
+              <Route path="/provider/dashboard" element={<ProtectedRoute allowedRoles={WRITE_ROLE}><ProviderDashboard /></ProtectedRoute>} />
+              <Route path="/provider/rates" element={<ProtectedRoute allowedRoles={WRITE_ROLE}><RateManagement /></ProtectedRoute>} />
+              <Route path="/provider/routes" element={<ProtectedRoute allowedRoles={WRITE_ROLE}><RouteManagement /></ProtectedRoute>} />
+              <Route path="/provider/booking-requests" element={<ProtectedRoute allowedRoles={WRITE_ROLE}><BookingRequests /></ProtectedRoute>} />
+              <Route path="/provider/analytics" element={<ProtectedRoute allowedRoles={WRITE_ROLE}><Analytics /></ProtectedRoute>} />
 
               <Route path="/admin/dashboard" element={<Navigate to="/admin/pricing" replace />} />
-              <Route path="/admin/pricing" element={<ProtectedRoute allowedRoles={['admin']}><PricingLayout /></ProtectedRoute>}>
+              <Route path="/admin/pricing" element={<ProtectedRoute allowedRoles={WRITE_ROLE}><PricingLayout /></ProtectedRoute>}>
                 <Route index element={<PricingOverview />} />
               <Route path="air" element={<AirMatrix />} />
                 <Route path="history" element={<MatrixHistory />} />
                 <Route path="calculator" element={<QuoteCalculator />} />
               </Route>
-              <Route path="/admin/pricing/matrix/new" element={<ProtectedRoute allowedRoles={['admin']}><MatrixForm /></ProtectedRoute>} />
-              <Route path="/admin/pricing/matrix/:id/edit" element={<ProtectedRoute allowedRoles={['admin']}><MatrixForm /></ProtectedRoute>} />
-              <Route path="/admin/pricing/matrix/:id" element={<ProtectedRoute allowedRoles={['admin']}><MatrixDetail /></ProtectedRoute>} />
-              <Route path="/admin/providers" element={<ProtectedRoute allowedRoles={['admin']}><ProviderManagement /></ProtectedRoute>} />
-              <Route path="/admin/leads" element={<ProtectedRoute allowedRoles={['admin']}><Leads /></ProtectedRoute>} />
-              <Route path="/admin/quotes" element={<ProtectedRoute allowedRoles={['admin']}><Quotes /></ProtectedRoute>} />
+              <Route path="/admin/pricing/matrix/new" element={<ProtectedRoute allowedRoles={WRITE_ROLE}><MatrixForm /></ProtectedRoute>} />
+              <Route path="/admin/pricing/matrix/:id/edit" element={<ProtectedRoute allowedRoles={WRITE_ROLE}><MatrixForm /></ProtectedRoute>} />
+              <Route path="/admin/pricing/matrix/:id" element={<ProtectedRoute allowedRoles={WRITE_ROLE}><MatrixDetail /></ProtectedRoute>} />
+              <Route path="/admin/providers" element={<ProtectedRoute allowedRoles={WRITE_ROLE}><ProviderManagement /></ProtectedRoute>} />
+              <Route path="/admin/leads" element={<ProtectedRoute allowedRoles={ANY_ROLE}><Leads /></ProtectedRoute>} />
+              <Route path="/admin/quotes" element={<ProtectedRoute allowedRoles={ANY_ROLE}><Quotes /></ProtectedRoute>} />
             </Route>
 
-            <Route path="/" element={<Navigate to="/instant-quote" replace />} />
-            <Route path="*" element={<Navigate to="/instant-quote" replace />} />
+            <Route path="/" element={<HomeRedirect />} />
+            <Route path="*" element={<HomeRedirect />} />
           </Routes>
           <Toaster position="top-right" richColors />
         </AuthProvider>

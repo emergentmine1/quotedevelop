@@ -8,6 +8,7 @@ import { downloadXlsx } from '@/lib/xlsx';
 import { QUOTE_STATUSES, fetchQuotes, setQuoteStatus, fetchCountryOptions, toExportRows } from '@/lib/quotes-store';
 import { QuoteFilters, EMPTY_FILTERS } from '@/components/quotes/QuoteFilters';
 import { QuoteRow, STATUS_STYLES } from '@/components/quotes/QuoteRow';
+import { useAuth } from '@/contexts/AuthContext';
 
 function useDebounced(value, ms) {
   const [v, setV] = useState(value);
@@ -24,6 +25,7 @@ export default function Quotes() {
   const [loading, setLoading] = useState(true);
   const [countries, setCountries] = useState([]);
   const [savingId, setSavingId] = useState(null);
+  const { canWrite } = useAuth();
   const query = useDebounced(filters.query, 300);
 
   const load = useCallback(async () => {
@@ -75,7 +77,7 @@ export default function Quotes() {
       <QuotesHeader live={data.live} disabled={!data.items.length} onCsv={onCsv} onXlsx={onXlsx} />
       <StatusChips counts={counts} active={filters.statusKey} onPick={(k) => setFilters({ ...filters, statusKey: filters.statusKey === k ? 'all' : k })} />
       <QuoteFilters filters={filters} onChange={setFilters} countries={countries} />
-      <QuotesTable data={data} loading={loading} savingId={savingId} onStatusChange={changeStatus} />
+      <QuotesTable data={data} loading={loading} savingId={savingId} canWrite={canWrite} onStatusChange={changeStatus} />
     </div>
   );
 }
@@ -133,14 +135,17 @@ function StatusChips({ counts, active, onPick }) {
   );
 }
 
-function QuotesTable({ data, loading, savingId, onStatusChange }) {
+function QuotesTable({ data, loading, savingId, canWrite, onStatusChange }) {
   return (
     <div className="bg-white rounded-2xl border border-slate-100 kwe-shadow overflow-hidden">
       <div className="px-5 py-3 border-b border-slate-100 flex items-center justify-between">
         <div data-testid="quotes-count" className="text-xs font-bold uppercase tracking-widest text-slate-500">
           {data.items.length} of {data.total} quote{data.total !== 1 ? 's' : ''}
         </div>
-        {loading && <Loader2 data-testid="quotes-loading" className="h-4 w-4 animate-spin text-slate-400" />}
+        <div className="flex items-center gap-3">
+          {!canWrite && <span data-testid="quotes-readonly-note" className="text-[11px] text-slate-400">Read-only access · status changes disabled</span>}
+          {loading && <Loader2 data-testid="quotes-loading" className="h-4 w-4 animate-spin text-slate-400" />}
+        </div>
       </div>
       <div className="overflow-x-auto">
         <table className="w-full text-left" data-testid="quotes-table">
@@ -161,6 +166,7 @@ function QuotesTable({ data, loading, savingId, onStatusChange }) {
                 quote={q}
                 statusKey={data.statusMap.toKey[q.status]}
                 saving={savingId === q.qrid}
+                readOnly={!canWrite}
                 onStatusChange={onStatusChange}
               />
             ))}

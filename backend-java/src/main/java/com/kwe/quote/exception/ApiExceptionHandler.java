@@ -44,6 +44,23 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
         return problem;
     }
 
+    @ExceptionHandler(ConflictException.class)
+    public ProblemDetail handleConflict(ConflictException exception) {
+        ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.CONFLICT);
+        problem.setTitle("Conflict");
+        problem.setDetail(exception.getMessage());
+        return problem;
+    }
+
+    /** Lets Spring Security's 403 through instead of the catch-all 500 below. */
+    @ExceptionHandler(org.springframework.security.access.AccessDeniedException.class)
+    public ProblemDetail handleAccessDenied(org.springframework.security.access.AccessDeniedException exception) {
+        ProblemDetail problem = ProblemDetail.forStatus(HttpStatus.FORBIDDEN);
+        problem.setTitle("Forbidden");
+        problem.setDetail("You do not have permission to perform this action.");
+        return problem;
+    }
+
     /** Gives bean validation failures the same shape as the handler above. */
     @Override
     protected ResponseEntity<Object> handleMethodArgumentNotValid(
@@ -67,7 +84,6 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
         return ResponseEntity.badRequest().body(problem);
     }
 
-    // Once Spring Security is added, handle AccessDeniedException explicitly or it turns into a 500 here instead of a 403.
     @ExceptionHandler(Exception.class)
     public ProblemDetail handleUnexpected(Exception exception) {
         log.error("Unhandled exception", exception);

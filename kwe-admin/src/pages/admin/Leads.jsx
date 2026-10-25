@@ -36,6 +36,7 @@ import {
   LEAD_STATUSES,
 } from '@/lib/leads-store';
 import { toast } from 'sonner';
+import { useAuth } from '@/contexts/AuthContext';
 
 const STATUS_STYLES = {
   new: 'bg-sky-100 text-sky-700 border-sky-200',
@@ -67,6 +68,7 @@ const KANBAN_COLUMNS = [
 
 export default function Leads() {
   const navigate = useNavigate();
+  const { canWrite } = useAuth();
   const [refresh, setRefresh] = useState(0);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -112,6 +114,7 @@ export default function Leads() {
   }, [leads]);
 
   const changeStatus = (id, status) => {
+    if (!canWrite) return;
     updateLead(id, { status });
     toast.success(`Lead moved to ${status}`);
     setRefresh((n) => n + 1);
@@ -119,6 +122,7 @@ export default function Leads() {
   };
 
   const remove = (id) => {
+    if (!canWrite) return;
     deleteLead(id);
     toast.success('Lead deleted');
     setRefresh((n) => n + 1);
@@ -143,7 +147,7 @@ export default function Leads() {
           <div className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-[0.2em] font-bold text-[#D4AF37]">
             <Sparkles className="h-3 w-3" /> Sales pipeline
           </div>
-          <h1 className="text-3xl font-black tracking-tight text-[#0F172A] mt-1">Leads</h1>
+          <h1 className="text-3xl font-black tracking-tight text-[#0F172A] mt-1">Customer Leads</h1>
           <p className="text-sm text-slate-500 mt-1">
             Prospects captured from the Instant Quote flow. Assign, follow up and convert.
           </p>
@@ -426,7 +430,7 @@ export default function Leads() {
 
               <div>
                 <Label>Status</Label>
-                <Select value={selected.status} onValueChange={(v) => changeStatus(selected.id, v)}>
+                <Select value={selected.status} onValueChange={(v) => changeStatus(selected.id, v)} disabled={!canWrite}>
                   <SelectTrigger data-testid="lead-status-select" className="h-11 mt-1.5 rounded-xl border-slate-200">
                     <SelectValue />
                   </SelectTrigger>
@@ -460,14 +464,14 @@ export default function Leads() {
                 <RefreshCw className="h-4 w-4" /> Regenerate quote
               </Button>
 
-              <Button
+              {canWrite && <Button
                 variant="outline"
                 onClick={() => remove(selected.id)}
                 data-testid="lead-delete-button"
                 className="w-full h-10 rounded-xl border-red-200 text-red-600 hover:bg-red-50 gap-1.5"
               >
                 <Trash2 className="h-4 w-4" /> Delete lead
-              </Button>
+              </Button>}
             </div>
           )}
         </aside>

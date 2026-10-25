@@ -16,6 +16,7 @@ import {
 } from '@/lib/pricing-data';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { isBackendAvailable, savePricingMatrix } from '@/lib/api-client';
 
 // ---------------- Zod schemas ----------------
 const dateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Use a YYYY-MM-DD date');
@@ -333,8 +334,25 @@ export default function MatrixForm() {
   });
 
   const onSubmit = async (data) => {
-    // Mock: pretend we saved
-    await new Promise((r) => setTimeout(r, 500));
+    // Saves to POST/PUT /api/v1/pricing-matrices when the backend is connected; otherwise sample mode.
+    if (await isBackendAvailable()) {
+      try {
+        await savePricingMatrix({
+          matrixId: existing?.matrixId,
+          matrixType: type.toUpperCase(),
+          matrixCode: existing?.matrixCode || existing?.id || `${type.toUpperCase()}-${Date.now().toString(36)}`,
+          name: data.name || existing?.name || `${meta.label} ${id || 'new'}`,
+          status: (data.status || existing?.status || 'DRAFT').toUpperCase(),
+          data,
+          version: existing?.version ?? 0,
+        });
+      } catch (e) {
+        toast.error(e.status === 403 ? 'You do not have permission to change pricing.' : e.message || 'Save failed');
+        return;
+      }
+    } else {
+      await new Promise((r) => setTimeout(r, 500));
+    }
     setSubmitted(true);
     toast.success(editing ? `Matrix ${id} updated` : 'New matrix created');
     setTimeout(() => navigate(`/admin/pricing/${type}`), 800);

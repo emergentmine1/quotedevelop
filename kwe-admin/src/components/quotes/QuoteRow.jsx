@@ -16,7 +16,7 @@ const fmtDate = (iso) =>
   iso ? new Date(iso).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }) : '—';
 const fmtNum = (n) => (n === null || n === undefined || n === '' ? '—' : Number(n).toLocaleString('en-US', { maximumFractionDigits: 1 }));
 
-export function QuoteRow({ quote, statusKey, onStatusChange, saving }) {
+export function QuoteRow({ quote, statusKey, onStatusChange, saving, readOnly }) {
   return (
     <tr data-testid={`quote-row-${quote.qrid}`} className="border-b border-slate-100 hover:bg-slate-50/70 transition-colors">
       <td className="px-5 py-3.5">
@@ -45,7 +45,7 @@ export function QuoteRow({ quote, statusKey, onStatusChange, saving }) {
       </td>
       <td className="px-5 py-3.5 text-xs text-slate-600 whitespace-nowrap">{fmtDate(quote.cargoReadyDate)}</td>
       <td className="px-5 py-3.5">
-        <Select value={statusKey} onValueChange={(v) => onStatusChange(quote, v)} disabled={saving}>
+        <Select value={statusKey} onValueChange={(v) => onStatusChange(quote, v)} disabled={saving || readOnly}>
           <SelectTrigger
             data-testid={`quote-status-select-${quote.qrid}`}
             className={cn('h-8 w-32 rounded-lg border text-[11px] font-bold uppercase tracking-widest', STATUS_STYLES[statusKey])}
