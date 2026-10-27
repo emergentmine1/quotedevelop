@@ -4,8 +4,8 @@
 
 | Piece | Status |
 |---|---|
-| Admin login page, logout, session expiry, Access Denied page | Done (kwe-admin) |
-| Role-based menu (Pricing Matrix / Customer Leads / Quotes) + route guards | Done (kwe-admin) |
+| Admin login page, logout, session expiry, Access Denied page | Done (admin app) |
+| Role-based menu (Pricing Matrix / Customer Leads / Quotes) + route guards | Done (admin app) |
 | Spring Security: token validation, DB role lookup, 401/403 on every admin API | Code done — **compile & run on your machine** (needs DB for jOOQ) |
 | `kwe_admin_users`, `kwe_rate_profile`, `kwe_rate_matrix` SQL (needs the `btree_gist` extension) | Done — **you run the scripts** |
 | Rate Profile REST API (READ_WRITE only) | Code done — untested here (no DB in this environment) |
@@ -42,7 +42,7 @@ INSERT INTO quoteownr.kwe_admin_users (email, role, is_active) VALUES ('jane.doe
 
 The app fails fast on startup if okta mode has no issuer or static mode has a short secret.
 
-## 3. Admin app environment (`kwe-admin/.env`, see `.env.example`)
+## 3. Admin app environment (`.env` in the repo root, see `.env.example`)
 
 | Variable | Notes |
 |---|---|
