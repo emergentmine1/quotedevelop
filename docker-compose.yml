@@ -1,0 +1,46 @@
+# KWE Instant Quote Admin — admin UI + Java backend.
+#
+# 1. cp .env.example .env   and fill in the database values
+# 2. Build the backend jar once (jOOQ codegen reads your DB, so credentials stay out of the image):
+#      cd backend-java && ./mvnw clean package -DskipTests && cd ..
+# 3. docker compose up --build
+#    Admin UI → http://localhost:3000   Backend → http://localhost:8080
+#
+# UI only with dummy data (no backend / DB):  docker compose up --build admin-ui
+#   (set VITE_AUTH_MODE=demo in .env)
+
+services:
+  backend:
+    build:
+      context: ./backend-java
+    container_name: kwe-backend
+    ports:
+      - "8080:8080"
+    environment:
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT:-5432}
+      DB_NAME: ${DB_NAME}
+      DB_SCHEMA: ${DB_SCHEMA:-quoteownr}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      KWE_AUTH_MODE: ${KWE_AUTH_MODE:-static}
+      OKTA_ISSUER: ${OKTA_ISSUER:-}
+      OKTA_AUDIENCE: ${OKTA_AUDIENCE:-api://default}
+      STATIC_JWT_SECRET: ${STATIC_JWT_SECRET:-}
+      STATIC_LOGIN_PASSWORD: ${STATIC_LOGIN_PASSWORD:-}
+      KWE_CORS_ALLOWED_ORIGIN_PATTERNS: ${KWE_CORS_ALLOWED_ORIGIN_PATTERNS:-http://localhost:*}
+    restart: unless-stopped
+
+  admin-ui:
+    build:
+      context: ./admin-ui
+      args:
+        VITE_BACKEND_URL: ${VITE_BACKEND_URL:-http://localhost:8080}
+        VITE_AUTH_MODE: ${VITE_AUTH_MODE:-static}
+        VITE_OKTA_ISSUER: ${VITE_OKTA_ISSUER:-}
+        VITE_OKTA_CLIENT_ID: ${VITE_OKTA_CLIENT_ID:-}
+        VITE_OKTA_IDP_ID: ${VITE_OKTA_IDP_ID:-}
+    container_name: kwe-admin-ui
+    ports:
+      - "3000:8080"
+    restart: unless-stopped

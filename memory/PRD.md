@@ -55,3 +55,11 @@ Existing "KWE Instant Quote" app: Java Spring Boot backend (jOOQ + PostgreSQL/Au
 - kwe-admin vite.config.js: publicDir set to 'public' (flags/logo now served), allowedHosts: true.
 - Removed /app/frontend/package-lock.json (yarn only).
 - To switch back: `sudo supervisorctl stop kwe-admin && sudo supervisorctl start frontend`.
+
+
+## Layout (latest)
+- /app/admin-ui (React+Vite admin, supervisor program kwe-admin, port 3000), /app/backend-java (Spring Boot), /app/docker-compose.yml, /app/.env.example
+- Public Next.js app and root docs removed at user request.
+- Rate Management: Freight/Origin Rate Profiles (browser storage in demo; /api/v1/rate-profiles when backend connected), delete + confirm popups, transport mode AIR only. Quotes menu shows a blank page. Leads regenerate button removed.
+- Auth: demo/static/okta modes; dummy users in test_credentials.md.
+- Not yet verified by testing agent: Rate Management flows, delete/deactivate popups.

@@ -1,27 +1,25 @@
 # KWE Instant Quote Admin
 
-Admin portal for KWE Rate & Quote: Rate Management (Freight / Origin Rate Profiles), Customer Leads,
-role-based access (Read-Only / Read + Write) and Okta / Microsoft Entra ID sign-in.
-
 ```
-/                     React 19 + Vite admin app (this folder)
-├── src/              pages, components, lib (auth, rate-profiles, api-client)
-├── public/           logo, flags/
-├── .env.example      backend URL, sign-in mode, Okta settings
-└── backend-java/     Spring Boot 3.5 + jOOQ API used by the admin app (see backend-java/AUTH_SETUP.md)
+/app
+├── admin-ui/            React 19 + Vite admin app (Rate Management, Customer Leads, login/roles)
+├── backend-java/        Spring Boot 3.5 + jOOQ API (see backend-java/AUTH_SETUP.md)
+├── docker-compose.yml   runs both
+└── .env.example         values for docker compose
 ```
 
-## Run with dummy data (no backend)
+## Admin UI only, dummy data (no backend)
 
 Needs Node.js 20+ and Yarn.
 
 ```bash
-yarn install --ignore-scripts
+cd admin-ui
+yarn install
 yarn start            # http://localhost:3000
 ```
 
 No `.env` needed: sign-in runs in demo mode and data is kept in the browser.
-Click **Sign in with SSO** → email → **Next** → password `Demo@123`.
+**Sign in with SSO** → email → **Next** → password `Demo@123`.
 
 | Email | Access |
 |---|---|
@@ -30,12 +28,21 @@ Click **Sign in with SSO** → email → **Next** → password `Demo@123`.
 | inactive@kwe.com | Denied (inactive) |
 | outsider@kwe.com | Denied (no record) |
 
-## Run with the Java backend
+## With the Java backend (local, no Docker)
 
-1. Run `backend-java/db/*.sql` against your database, then start the backend (see `backend-java/AUTH_SETUP.md`).
-2. Create `.env`:
-   ```
-   VITE_BACKEND_URL=http://localhost:8080
-   VITE_AUTH_MODE=static
-   ```
-3. `yarn start`. For Okta: `VITE_AUTH_MODE=okta`, `VITE_OKTA_ISSUER`, `VITE_OKTA_CLIENT_ID` (optional `VITE_OKTA_IDP_ID`).
+1. Run `backend-java/db/*.sql` against your database (before the first build — jOOQ reads these tables).
+2. Backend: set the DB / auth env vars (see `backend-java/.env.example`), then
+   `cd backend-java && ./mvnw spring-boot:run` → http://localhost:8080
+3. UI: create `admin-ui/.env` with `VITE_BACKEND_URL=http://localhost:8080` and `VITE_AUTH_MODE=static`, then `yarn start`.
+
+## With Docker
+
+```bash
+cp .env.example .env                                   # fill in DB values
+cd backend-java && ./mvnw clean package -DskipTests && cd ..   # jar needs DB access for jOOQ codegen
+docker compose up --build                               # UI :3000, backend :8080
+```
+
+UI only with dummy data: set `VITE_AUTH_MODE=demo` in `.env`, then `docker compose up --build admin-ui`.
+
+`VITE_*` values are baked into the UI at build time; rebuild the `admin-ui` image after changing them.
