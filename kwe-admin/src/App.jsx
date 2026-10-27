@@ -33,7 +33,6 @@ import Analytics from '@/pages/provider/Analytics';
 
 import ProviderManagement from '@/pages/admin/ProviderManagement';
 import Leads from '@/pages/admin/Leads';
-import Quotes from '@/pages/admin/Quotes';
 
 import PricingLayout from '@/components/layouts/PricingLayout';
 import RateProfileList from '@/pages/admin/rates/RateProfileList';
@@ -88,7 +87,7 @@ function App() {
               <Route path="/admin/pricing/profile/:id" element={<ProtectedRoute allowedRoles={WRITE_ROLE}><RateProfileDetail /></ProtectedRoute>} />
               <Route path="/admin/providers" element={<ProtectedRoute allowedRoles={WRITE_ROLE}><ProviderManagement /></ProtectedRoute>} />
               <Route path="/admin/leads" element={<ProtectedRoute allowedRoles={ANY_ROLE}><Leads /></ProtectedRoute>} />
-              <Route path="/admin/quotes" element={<ProtectedRoute allowedRoles={ANY_ROLE}><Quotes /></ProtectedRoute>} />
+              <Route path="/admin/quotes" element={<ProtectedRoute allowedRoles={ANY_ROLE}><div data-testid="admin-quotes-blank" /></ProtectedRoute>} />
             </Route>
 
             <Route path="/" element={<HomeRedirect />} />

@@ -33,11 +33,7 @@ export const categoryOfChargeCode = (code) =>
   Object.values(CATEGORIES).find((c) => c.chargeCodes.some((cc) => cc.code === code))?.key || null;
 
 export const CARRIERS = AIRLINES.map((a) => ({ code: a.flightCode, name: a.name }));
-export const TRANSPORT_MODES = [
-  { code: 'AIR', name: 'Air' },
-  { code: 'OCEAN', name: 'Ocean' },
-  { code: 'ROAD', name: 'Road' },
-];
+export const TRANSPORT_MODES = [{ code: 'AIR', name: 'Air' }];
 export { SERVICE_TYPES, CURRENCIES };
 export const ORIGIN_PORTS = airports.map((a) => ({ code: a.code, name: a.city }));
 export const DEST_PORTS = AIR_DESTINATIONS.map((d) => ({ code: d.code, name: d.city }));

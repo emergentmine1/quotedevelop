@@ -32,6 +32,7 @@ CREATE TABLE IF NOT EXISTS quoteownr.kwe_rate_profile (
         (category = 'freight' AND charge_code IN ('FRTRV', 'FSCRV', 'SECFEERV')) OR
         (category = 'origin'  AND charge_code IN ('CUSTCLRV', 'CARTAGERV', 'PKPRV', 'HANRV', 'IORV', 'CPRV'))),
     CONSTRAINT kwe_rate_profile_calc_ck CHECK (calculation_method IN ('FLAT', 'WEIGHT', 'FLAT_WEIGHT')),
+    CONSTRAINT kwe_rate_profile_mode_ck CHECK (transport_mode = 'AIR'),
     CONSTRAINT kwe_rate_profile_status_ck CHECK (status IN ('DRAFT', 'ACTIVE', 'INACTIVE')),
     CONSTRAINT kwe_rate_profile_dates_ck CHECK (expiration_date >= effective_date),
     CONSTRAINT kwe_rate_profile_markup_ck CHECK (

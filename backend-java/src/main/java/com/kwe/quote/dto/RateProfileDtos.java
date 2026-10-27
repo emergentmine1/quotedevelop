@@ -42,7 +42,7 @@ public final class RateProfileDtos {
             @NotBlank @Pattern(regexp = "freight|origin") String category,
             @NotBlank @Size(max = 20) String chargeCode,
             @NotBlank @Size(max = 20) String carrierCode,
-            @NotBlank @Size(max = 10) String transportMode,
+            @NotBlank @Pattern(regexp = "AIR", message = "transportMode must be AIR") String transportMode,
             @NotBlank @Size(max = 30) String serviceType,
             @NotBlank @Size(max = 10) String originPort,
             @NotBlank @Pattern(regexp = "FLAT|WEIGHT|FLAT_WEIGHT") String calculationMethod,

@@ -8,7 +8,8 @@ import { downloadCsv } from '@/lib/csv';
 import { downloadXlsx } from '@/lib/xlsx';
 import { useAuth } from '@/contexts/AuthContext';
 import { CATEGORIES } from '@/lib/rate-profiles/constants';
-import { listProfiles, changeStatus, ProfileConflictError } from '@/lib/rate-profiles/store';
+import { listProfiles, changeStatus, deleteProfile, ProfileConflictError } from '@/lib/rate-profiles/store';
+import { ConfirmProfileAction } from '@/components/rates/ConfirmProfileAction';
 import { ProfileFilters, EMPTY_PROFILE_FILTERS, applyProfileFilters } from '@/components/rates/ProfileFilters';
 import { ProfileTable, exportRows } from '@/components/rates/ProfileTable';
 
@@ -20,6 +21,7 @@ export default function RateProfileList() {
   const [all, setAll] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState(EMPTY_PROFILE_FILTERS);
+  const [pending, setPending] = useState(null);
 
   useEffect(() => {
     let alive = true;
@@ -33,6 +35,21 @@ export default function RateProfileList() {
   }, [category]);
 
   const list = useMemo(() => applyProfileFilters(all, filters), [all, filters]);
+
+  const runAction = async ({ action, profile }) => {
+    if (action === 'delete') {
+      try {
+        await deleteProfile(profile.id);
+        setAll((cur) => cur.filter((x) => x.id !== profile.id));
+        toast.success(`${profile.profileCode} deleted`);
+      } catch (e) {
+        toast.error(e.message || 'Delete failed');
+      }
+    } else {
+      await toggleStatus(profile);
+    }
+    setPending(null);
+  };
 
   const toggleStatus = async (p) => {
     const next = p.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
@@ -98,9 +115,11 @@ export default function RateProfileList() {
           list={list}
           onView={(p) => navigate(`/admin/pricing/profile/${p.id}`)}
           onClone={(p) => navigate(`/admin/pricing/${category}/new?cloneFrom=${p.id}`)}
-          onToggleStatus={toggleStatus}
+          onToggleStatus={(p) => (p.status === 'ACTIVE' ? setPending({ action: 'deactivate', profile: p }) : toggleStatus(p))}
+          onDelete={(p) => setPending({ action: 'delete', profile: p })}
         />
       )}
+      <ConfirmProfileAction pending={pending} onCancel={() => setPending(null)} onConfirm={runAction} />
     </div>
   );
 }

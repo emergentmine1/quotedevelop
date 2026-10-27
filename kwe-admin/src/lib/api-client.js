@@ -108,6 +108,10 @@ export function setRateProfileStatus(id, status, version) {
   return request(`/api/v1/rate-profiles/${id}/status`, { method: 'PATCH', body: { status, version }, auth: true });
 }
 
+export function deleteRateProfile(id) {
+  return request(`/api/v1/rate-profiles/${id}`, { method: 'DELETE', auth: true });
+}
+
 /** Quick probe so admin pages can fall back to sample data when no backend is running. */
 let _availability = null;
 export async function isBackendAvailable() {

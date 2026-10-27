@@ -1,5 +1,5 @@
 // Rate Profile storage. Live: Java /api/v1/rate-profiles. Until the backend is connected: browser storage.
-import { isBackendAvailable, listRateProfiles, getRateProfile, saveRateProfile, setRateProfileStatus } from '@/lib/api-client';
+import { isBackendAvailable, listRateProfiles, getRateProfile, saveRateProfile, setRateProfileStatus, deleteRateProfile } from '@/lib/api-client';
 import { CATEGORIES, CARRIERS, ORIGIN_PORTS, DEST_PORTS, SERVICE_TYPES } from '@/lib/rate-profiles/constants';
 import { findActiveOverlap, overlapMessage } from '@/lib/rate-profiles/validation';
 
@@ -123,6 +123,12 @@ export async function saveProfile(profile, userEmail) {
   };
   writeAll([...all, created]);
   return created;
+}
+
+export async function deleteProfile(id) {
+  if (await isBackendAvailable()) return deleteRateProfile(id);
+  writeAll(readAll().filter((p) => p.id !== id));
+  return null;
 }
 
 export async function changeStatus(profile, status, userEmail) {

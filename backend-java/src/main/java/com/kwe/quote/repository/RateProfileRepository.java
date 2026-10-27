@@ -103,6 +103,10 @@ public class RateProfileRepository {
                 .execute() == 1;
     }
 
+    public boolean delete(long id) {
+        return dsl.deleteFrom(KWE_RATE_PROFILE).where(KWE_RATE_PROFILE.PROFILE_ID.eq(id)).execute() == 1;
+    }
+
     private Map<org.jooq.Field<?>, Object> header(SaveRateProfile p, String user, LocalDateTime now) {
         Map<org.jooq.Field<?>, Object> m = new java.util.LinkedHashMap<>();
         m.put(KWE_RATE_PROFILE.CATEGORY, p.category());

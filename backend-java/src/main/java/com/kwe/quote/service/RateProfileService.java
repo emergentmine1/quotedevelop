@@ -96,6 +96,14 @@ public class RateProfileService {
         return get(id);
     }
 
+    /** Hard delete; the Rate Matrix rows go with it (ON DELETE CASCADE). */
+    @Transactional
+    public void delete(long id) {
+        if (!repository.delete(id)) {
+            throw new NotFoundException("rate profile " + id + " does not exist");
+        }
+    }
+
     /** Business rules that bean validation can't express. */
     void validate(SaveRateProfile p) {
         if (!CHARGE_CODES.get(p.category()).contains(p.chargeCode())) {

@@ -1,4 +1,4 @@
-import { Eye, Copy, PowerOff, Power } from 'lucide-react';
+import { Eye, Copy, PowerOff, Power, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import StatusPill from '@/components/StatusPill';
 import { CARRIERS, ORIGIN_PORTS, TRANSPORT_MODES, CALC_METHODS, nameOf } from '@/lib/rate-profiles/constants';
@@ -28,7 +28,7 @@ export const exportRows = (list) => list.map((p) => ({
 
 const TH = ({ children, right }) => <th className={`${right ? 'text-right' : 'text-left'} py-3 px-4 whitespace-nowrap`}>{children}</th>;
 
-export function ProfileTable({ list, onView, onClone, onToggleStatus }) {
+export function ProfileTable({ list, onView, onClone, onToggleStatus, onDelete }) {
   return (
     <div className="bg-white rounded-xl border border-slate-100 kwe-shadow overflow-x-auto">
       <table className="w-full" data-testid="profile-table">
@@ -69,6 +69,7 @@ export function ProfileTable({ list, onView, onClone, onToggleStatus }) {
                     title={p.status === 'ACTIVE' ? 'Deactivate' : 'Activate'} data-testid={`toggle-status-${p.profileCode}`} onClick={() => onToggleStatus(p)}>
                     {p.status === 'ACTIVE' ? <PowerOff className="h-3.5 w-3.5" /> : <Power className="h-3.5 w-3.5" />}
                   </Button>
+                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-red-600" title="Delete" data-testid={`delete-${p.profileCode}`} onClick={() => onDelete(p)}><Trash2 className="h-3.5 w-3.5" /></Button>
                 </div>
               </td>
             </tr>

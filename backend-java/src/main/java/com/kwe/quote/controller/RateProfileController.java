@@ -10,6 +10,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -53,6 +54,13 @@ public class RateProfileController {
     @PutMapping("/{id}")
     public RateProfile update(@PathVariable long id, @Valid @RequestBody SaveRateProfile body, Authentication auth) {
         return service.update(id, body, auth.getName());
+    }
+
+    @Operation(summary = "Delete a profile and its Rate Matrix")
+    @DeleteMapping("/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void delete(@PathVariable long id) {
+        service.delete(id);
     }
 
     @Operation(summary = "Activate / deactivate / draft a profile")

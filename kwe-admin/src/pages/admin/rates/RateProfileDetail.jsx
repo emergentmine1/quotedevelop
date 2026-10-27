@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Pencil, Copy, PowerOff, Power, Plane, FileText, Layers, Tag, Loader2 } from 'lucide-react';
+import { ArrowLeft, Pencil, Copy, PowerOff, Power, Plane, FileText, Layers, Tag, Loader2, Trash2 } from 'lucide-react';
+import { ConfirmProfileAction } from '@/components/rates/ConfirmProfileAction';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -10,7 +11,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import {
   CATEGORIES, CARRIERS, ORIGIN_PORTS, DEST_PORTS, TRANSPORT_MODES, CALC_METHODS, nameOf, calcMethod,
 } from '@/lib/rate-profiles/constants';
-import { getProfile, changeStatus } from '@/lib/rate-profiles/store';
+import { getProfile, changeStatus, deleteProfile } from '@/lib/rate-profiles/store';
 import { fmtStamp, pct } from '@/components/rates/ProfileTable';
 
 const money = (v, cur) => (v === undefined || v === null || v === '' ? '—' : `${cur === 'USD' ? '$' : ''}${Number(v).toFixed(2)}${cur === 'USD' ? '' : ` ${cur}`}`);
@@ -20,6 +21,7 @@ export default function RateProfileDetail() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [p, setP] = useState(undefined);
+  const [pending, setPending] = useState(null);
 
   useEffect(() => { getProfile(id).then(setP).catch(() => setP(null)); }, [id]);
 
@@ -36,6 +38,21 @@ export default function RateProfileDetail() {
     } catch (e) {
       toast.error(e.message || 'Status change failed', { duration: 8000 });
     }
+  };
+  const runAction = async ({ action }) => {
+    if (action === 'delete') {
+      try {
+        await deleteProfile(p.id);
+        toast.success(`${p.profileCode} deleted`);
+        navigate(`/admin/pricing/${p.category}`, { replace: true });
+        return;
+      } catch (e) {
+        toast.error(e.message || 'Delete failed');
+      }
+    } else {
+      await toggle();
+    }
+    setPending(null);
   };
 
   return (
@@ -62,8 +79,11 @@ export default function RateProfileDetail() {
         <div className="flex items-center gap-2">
           <Button variant="outline" className="rounded-xl gap-1.5" data-testid="detail-edit" onClick={() => navigate(`/admin/pricing/profile/${p.id}/edit`)}><Pencil className="h-4 w-4" /> Edit</Button>
           <Button variant="outline" className="rounded-xl gap-1.5" data-testid="detail-clone" onClick={() => navigate(`/admin/pricing/${p.category}/new?cloneFrom=${p.id}`)}><Copy className="h-4 w-4" /> Clone</Button>
-          <Button variant="outline" className={`rounded-xl gap-1.5 ${p.status === 'ACTIVE' ? 'border-amber-200 text-amber-700' : 'border-emerald-200 text-emerald-700'}`} data-testid="detail-toggle-status" onClick={toggle}>
+          <Button variant="outline" className={`rounded-xl gap-1.5 ${p.status === 'ACTIVE' ? 'border-amber-200 text-amber-700' : 'border-emerald-200 text-emerald-700'}`} data-testid="detail-toggle-status" onClick={() => (p.status === 'ACTIVE' ? setPending({ action: 'deactivate', profile: p }) : toggle())}>
             {p.status === 'ACTIVE' ? <><PowerOff className="h-4 w-4" /> Deactivate</> : <><Power className="h-4 w-4" /> Activate</>}
+          </Button>
+          <Button variant="outline" className="rounded-xl gap-1.5 border-red-200 text-red-600" data-testid="detail-delete" onClick={() => setPending({ action: 'delete', profile: p })}>
+            <Trash2 className="h-4 w-4" /> Delete
           </Button>
         </div>
       </div>
@@ -75,6 +95,7 @@ export default function RateProfileDetail() {
         <TabsContent value="general" className="pt-4"><GeneralInfo p={p} /></TabsContent>
         <TabsContent value="breaks" className="pt-4"><WeightBreaks p={p} /></TabsContent>
       </Tabs>
+      <ConfirmProfileAction pending={pending} onCancel={() => setPending(null)} onConfirm={runAction} />
     </div>
   );
 }

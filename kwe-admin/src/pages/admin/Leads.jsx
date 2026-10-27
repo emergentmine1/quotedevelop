@@ -129,16 +129,6 @@ export default function Leads() {
     if (selected?.id === id) setSelected(null);
   };
 
-  const regenerateQuote = (lead) => {
-    if (!lead?.quotePayload) {
-      toast.error('This lead has no stored quote payload. Ask the customer to re-submit.');
-      return;
-    }
-    sessionStorage.setItem('iq_payload', JSON.stringify(lead.quotePayload));
-    toast.success(`Regenerating ${lead.name}'s quote…`);
-    navigate('/instant-quote/results');
-  };
-
   return (
     <div className="space-y-6" data-testid="admin-leads-page">
       {/* Header */}
@@ -454,15 +444,6 @@ export default function Leads() {
                   {selected.notes}
                 </div>
               )}
-
-              <Button
-                onClick={() => regenerateQuote(selected)}
-                data-testid="lead-regenerate-quote"
-                disabled={!selected.quotePayload}
-                className="w-full h-11 rounded-xl bg-[#1E6AE1] hover:bg-[#1758c2] text-white font-semibold gap-2 disabled:opacity-50"
-              >
-                <RefreshCw className="h-4 w-4" /> Regenerate quote
-              </Button>
 
               {canWrite && <Button
                 variant="outline"
