@@ -88,11 +88,24 @@ export function updateQuoteRequestStatus(qrid, status) {
   return request(`/api/v1/quote-requests/${qrid}/status`, { method: 'PATCH', body: { status }, auth: true });
 }
 
-/** Pricing matrices — READ_WRITE only. POST creates, PUT updates with optimistic `version`. */
-export function savePricingMatrix({ matrixId, ...body }) {
-  return matrixId
-    ? request(`/api/v1/pricing-matrices/${matrixId}`, { method: 'PUT', body, auth: true })
-    : request('/api/v1/pricing-matrices', { method: 'POST', body, auth: true });
+/** Rate profiles — READ_WRITE only. */
+export function listRateProfiles(category) {
+  return request(`/api/v1/rate-profiles?category=${encodeURIComponent(category)}`, { auth: true });
+}
+
+export function getRateProfile(id) {
+  return request(`/api/v1/rate-profiles/${id}`, { auth: true });
+}
+
+/** POST creates; PUT updates and must carry the loaded `version` (409 when stale or overlapping). */
+export function saveRateProfile({ id, ...body }) {
+  return id
+    ? request(`/api/v1/rate-profiles/${id}`, { method: 'PUT', body, auth: true })
+    : request('/api/v1/rate-profiles', { method: 'POST', body, auth: true });
+}
+
+export function setRateProfileStatus(id, status, version) {
+  return request(`/api/v1/rate-profiles/${id}/status`, { method: 'PATCH', body: { status, version }, auth: true });
 }
 
 /** Quick probe so admin pages can fall back to sample data when no backend is running. */

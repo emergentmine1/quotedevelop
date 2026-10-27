@@ -48,7 +48,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/v1/auth/me").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/v1/quote-requests").hasAnyRole(ro, rw)
                         .requestMatchers(HttpMethod.PATCH, "/api/v1/quote-requests/*/status").hasRole(rw)
-                        .requestMatchers("/api/v1/pricing-matrices", "/api/v1/pricing-matrices/**").hasRole(rw)
+                        .requestMatchers("/api/v1/rate-profiles", "/api/v1/rate-profiles/**").hasRole(rw)
                         .anyRequest().denyAll())
                 .oauth2ResourceServer(o -> o
                         .jwt(j -> j.jwtAuthenticationConverter(converter))

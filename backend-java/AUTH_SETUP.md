@@ -7,8 +7,8 @@
 | Admin login page, logout, session expiry, Access Denied page | Done (kwe-admin) |
 | Role-based menu (Pricing Matrix / Customer Leads / Quotes) + route guards | Done (kwe-admin) |
 | Spring Security: token validation, DB role lookup, 401/403 on every admin API | Code done — **compile & run on your machine** (needs DB for jOOQ) |
-| `quoteownr.kwe_admin_users` + `quoteownr.kwe_pricing_matrix` SQL | Done — **you run the scripts** |
-| Pricing matrix REST API (READ_WRITE only) | Code done — untested here (no DB in this environment) |
+| `kwe_admin_users`, `kwe_rate_profile`, `kwe_rate_matrix` SQL (needs the `btree_gist` extension) | Done — **you run the scripts** |
+| Rate Profile REST API (READ_WRITE only) | Code done — untested here (no DB in this environment) |
 | Okta + Microsoft Entra ID sign-in | Code done & configurable — **not operational until Okta values are supplied and tested** |
 | Temporary dummy logins | Done (`static` = via backend, `demo` = browser only) |
 
@@ -16,7 +16,7 @@
 
 ```bash
 psql "$DB_URL" -f db/001_kwe_admin_users.sql
-psql "$DB_URL" -f db/002_kwe_pricing_matrix.sql
+psql "$DB_URL" -f db/002_kwe_rate_profile.sql
 psql "$DB_URL" -f db/900_seed_dummy_admin_users.sql   # dummy users, NOT for production
 ```
 
@@ -80,7 +80,7 @@ If `VITE_AUTH_MODE` is unset: `demo` in `yarn start` (dev), `okta` in production
 | `GET /api/v1/auth/me` | Any valid token (403 if no role) |
 | `GET /api/v1/quote-requests` | READ_ONLY or READ_WRITE |
 | `PATCH /api/v1/quote-requests/{qrid}/status` | READ_WRITE |
-| `GET/POST/PUT/DELETE /api/v1/pricing-matrices[/{id}]` | READ_WRITE |
+| `GET/POST/PUT /api/v1/rate-profiles[/{id}]`, `PATCH /api/v1/rate-profiles/{id}/status` | READ_WRITE |
 | anything else | denied |
 
 401 = missing/invalid/expired token, 403 = authenticated without permission. Stateless bearer tokens (no
